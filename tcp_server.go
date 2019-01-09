@@ -36,7 +36,7 @@ func main() {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	conn.Write([]byte("Please a line to search or ‘quit’ to quit.\n"))
+	conn.Write([]byte("Please enter a distict in Taipei City (for example, 信義區, 松山區, etc.) to get the weather information or ‘quit’ to quit.\n"))
 
 	scanner := bufio.NewScanner(conn)
 	timeoutDuration := timeoutSec * time.Second
@@ -46,7 +46,11 @@ func handleConn(conn net.Conn) {
 			break
 		}
 		conn.Write([]byte("Message received.\n"))
-		fmt.Println("Received data:", scanner.Text())
+
+		keyword := scanner.Text()
+		fmt.Println("Received keyword:", keyword, "from", conn.RemoteAddr())
+
+		go requestExternalAPI(conn, keyword)
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Scanner error:", err)
