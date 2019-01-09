@@ -1,5 +1,5 @@
 # Tcp Server
-A simple TCP server takes in any request text per line and sends a query to an external API, until client send `quit` or timed out.
+A TCP server takes in any request text per line and sends a query to an external API until client send `quit` or timed out.
 
 ## Run
 ```
