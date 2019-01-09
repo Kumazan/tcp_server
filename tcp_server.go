@@ -8,10 +8,16 @@ import (
 )
 
 const (
-	connType   = "tcp"
-	connHost   = "localhost"
-	connPort   = "2019"
+	connType = "tcp"
+	connHost = "localhost"
+	connPort = "2019"
+
 	timeoutSec = 30
+	reqPerSec  = 30
+)
+
+var (
+	locations = make(chan string, 100)
 )
 
 func main() {
@@ -21,7 +27,19 @@ func main() {
 		return
 	}
 
+	defer listener.Close()
 	fmt.Println("Starting listening...")
+
+	rateLimit := time.Second / reqPerSec
+	rateLimiter := time.Tick(rateLimit)
+
+	go func() {
+		for location := range locations {
+			<-rateLimiter
+			go requestWeatherInLoc(location)
+		}
+	}()
+
 	for {
 		c, err := listener.Accept()
 		if err != nil {
@@ -47,10 +65,9 @@ func handleConn(conn net.Conn) {
 		}
 		conn.Write([]byte("Message received.\n"))
 
-		keyword := scanner.Text()
-		fmt.Println("Received keyword:", keyword, "from", conn.RemoteAddr())
-
-		go requestExternalAPI(conn, keyword)
+		location := scanner.Text()
+		fmt.Println("Received location:", location, "from", conn.RemoteAddr())
+		locations <- location
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Println("Scanner error:", err)
